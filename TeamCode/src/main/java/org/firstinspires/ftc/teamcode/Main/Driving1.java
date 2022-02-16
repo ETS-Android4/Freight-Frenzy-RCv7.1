@@ -54,6 +54,7 @@ public class Driving1 extends LinearOpMode {
 
     private CRServo holder;
     private CRServo trap;
+    private CRServo stick;
 
     //Variabila cu clasa de functii
     private functions fx = new functions();
@@ -102,7 +103,6 @@ public class Driving1 extends LinearOpMode {
         motor_carusel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motor_carusel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         motor_carusel.setDirection(DcMotorSimple.Direction.FORWARD);
-
         //Init pentru motorul care se ocupa cu colectarea elementelor
         motor_colector = hardwareMap.get(DcMotorEx.class, "colector");
 
@@ -119,8 +119,13 @@ public class Driving1 extends LinearOpMode {
         trap = hardwareMap.crservo.get("trap");
         trap.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        holder.setPower(-0.3);
+        stick = hardwareMap.crservo.get("stick");
+        stick.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        holder.setPower(-0.22);
         trap.setPower(1);
+        stick.setPower(0.9);
+
 
         //Init pentru mecanum drive RR
         mecanum_drive = new SampleMecanumDrive(hardwareMap);
@@ -177,11 +182,12 @@ public class Driving1 extends LinearOpMode {
 
             //Functiile de baza
             fx.slider(true);
-            fx.carusel();
+            fx.carusel(true);
             fx.colector();
             fx.holder_cr();
             fx.trap_cr();
             fx.reset_brat();
+            fx.stick_cr();
             telemetry.addData("Speed: ", speed_robot);
             telemetry.update();
         }
@@ -269,7 +275,8 @@ public class Driving1 extends LinearOpMode {
         private boolean carusel_tgl_blue = false;
         private boolean carusel_last_it_blue = false;
         private boolean carusel_curr_it_blue = false;
-        public void carusel() {
+        double carusel_power = 0;
+        public void carusel(boolean logs) {
 
             carusel_last_it_red = carusel_curr_it_red;
             carusel_curr_it_red = gamepad1.y;
@@ -282,12 +289,29 @@ public class Driving1 extends LinearOpMode {
             if (carusel_curr_it_blue && !carusel_last_it_blue)
                 carusel_tgl_blue = !carusel_tgl_blue;
 
-            if (carusel_tgl_red)
-                motor_carusel.setPower(-0.5);
-            else if (carusel_tgl_blue)
-                motor_carusel.setPower(0.5);
+            if (carusel_tgl_red && !carusel_tgl_blue)
+            {
+                if (carusel_power > -0.60)
+                    carusel_power -= 0.04;
+
+            }
+            else if (carusel_tgl_blue && !carusel_tgl_red)
+            {
+                if (carusel_power < 0.60)
+                    carusel_power += 0.04;
+            }
             else
-                motor_carusel.setPower(0);
+                carusel_power = 0;
+
+            motor_carusel.setPower(carusel_power);
+
+            if (logs)
+            {
+                telemetry.addData("Toggle Red: ", carusel_tgl_red);
+                telemetry.addData("Toggle Blue: ", carusel_tgl_blue);
+                telemetry.addData("Carusel Power: ", carusel_power);
+
+            }
 
         }
 
@@ -317,7 +341,7 @@ public class Driving1 extends LinearOpMode {
             if (gamepad1.left_bumper )
                 holder.setPower(-1);
             else
-                holder.setPower(-0.3);
+                holder.setPower(-0.22);
 
         }
 
@@ -326,6 +350,20 @@ public class Driving1 extends LinearOpMode {
                 trap.setPower(0);
             else
                 trap.setPower(1);
+        }
+
+        public void stick_cr()
+        {
+            if (gamepad1.dpad_up && stick.getPower() <= 0.9)
+                stick.setPower(stick.getPower() + 0.02);
+            else if (gamepad1.dpad_down && stick.getPower() >= -0.84)
+                stick.setPower(stick.getPower() - 0.02);
+            else if (gamepad1.dpad_left)
+                stick.setPower(-0.84);
+
+
+
+            telemetry.addData("Stick power:", stick.getPower());
         }
     }
 }

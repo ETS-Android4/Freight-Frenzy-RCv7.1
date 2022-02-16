@@ -19,6 +19,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 //Road Runner Imports - Lucian
 
+import org.apache.commons.math3.stat.descriptive.moment.VectorialCovariance;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.internal.camera.delegating.DelegatingCaptureSequence;
 import org.firstinspires.ftc.teamcode.Autonomie.DetectObject;
@@ -41,8 +42,8 @@ import java.nio.file.attribute.FileOwnerAttributeView;
 import java.util.ArrayList;
 import java.util.function.Function;
 
-@Autonomous(name = "Red Side", group = "main")
-public class RedAuto1 extends LinearOpMode{
+@Autonomous(name = "RAZVY ASTA E", group = "main")
+public class RedAuto3 extends LinearOpMode{
 
     //Motoare Brat, Slidere, Carusel, Colector
     private DcMotorEx motor_brat;
@@ -129,7 +130,7 @@ public class RedAuto1 extends LinearOpMode{
 
         holder.setPower(-0.3);
         trap.setPower(1);
-        stick.setPower(-0.84);
+        stick.setPower(-0.76);
 
         //Init pentru mecanum drive RR
         mecanum_drive = new SampleMecanumDrive(hardwareMap);
@@ -139,6 +140,9 @@ public class RedAuto1 extends LinearOpMode{
 
         int tip_autonomie;
         waitForStart();
+
+        double last_x;
+        double last_y;
 
         tip_autonomie = pipe_line.gen_tip_autonomie();
         telemetry.addData("Autonomie: ", tip_autonomie);
@@ -153,187 +157,212 @@ public class RedAuto1 extends LinearOpMode{
 
         DriveConstants driveConstants = new DriveConstants();
 
-
         path.add(drive.trajectoryBuilder(new Pose2d())
-        .lineTo(new Vector2d(3, 24))
+                .forward(3)
         .build());
 
-        double last_x = path.get(0).end().getX();
-        double last_y = path.get(0).end().getY();
-
         path.add(drive.trajectoryBuilder(path.get(0).end())
-        .lineToLinearHeading(new Pose2d(last_x + 12, last_y, Math.toRadians(180)))
+                .lineToLinearHeading(new Pose2d(12, 0, Math.toRadians(180)),
+                        SampleMecanumDrive.getVelocityConstraint(30, 1, 10),
+                        SampleMecanumDrive.getAccelerationConstraint(30))
         .build());
 
         drive.followTrajectory(path.get(0));
         drive.followTrajectory(path.get(1));
 
-        motor_slider.setTargetPositionTolerance(10);
-
-            if (tip_autonomie == 1){
-                drive.followTrajectory(drive.trajectoryBuilder(path.get(1).end())
-                .forward(0.5)
-                .build());
-
-                motor_slider.setTargetPosition(870);
-                motor_slider.setPower(1.35);
-                while(motor_slider.isBusy());
-                motor_slider.setPower(0);
-
-                sleep(200);
-
-                holder.setPower(-1);
-                sleep(500);
-                trap.setPower(0);
-
-                sleep(1000);
-
-                holder.setPower(-0.3);
-                trap.setPower(1);
-
-                sleep(700);
-
-                motor_slider.setTargetPosition(0);
-                motor_slider.setPower(1);
-                while(motor_slider.isBusy());
-                motor_slider.setPower(0);
-
-                sleep(200);
-
-                drive.followTrajectory(drive.trajectoryBuilder(path.get(1).end())
-                        .back(0.25)
-                        .build());
-
-            }
-
-        if (tip_autonomie == 2){
-            drive.followTrajectory(drive.trajectoryBuilder(path.get(1).end())
-                    .forward(0.75)
+        if (tip_autonomie == 1) {
+            path.add(drive.trajectoryBuilder(path.get(1).end())
+                    .lineTo(new Vector2d(14.6, 12.2),
+                            SampleMecanumDrive.getVelocityConstraint(15, 2, 10),
+                            SampleMecanumDrive.getAccelerationConstraint(30))
                     .build());
-            motor_slider.setTargetPosition(1330);
-            motor_slider.setPower(1);
-            while(motor_slider.isBusy());
-            motor_slider.setPower(0);
-
-            sleep(200);
-
-            holder.setPower(-1);
-            sleep(500);
-            trap.setPower(0);
-
-            sleep(1000);
-
-            holder.setPower(-0.3);
-            trap.setPower(1);
-
-            sleep(700);
-
-            motor_slider.setTargetPosition(0);
-            motor_slider.setPower(1);
-            while(motor_slider.isBusy());
-            motor_slider.setPower(0);
-
-            sleep(200);
+            drive.followTrajectory(path.get(2));
+            stick.setPower(0.9);
+            sleep(750);
         }
 
-        if (tip_autonomie == 3 || tip_autonomie == 0){
-            motor_slider.setTargetPosition(2500);
-            motor_slider.setPower(1);
-            while(motor_slider.isBusy());
-            motor_slider.setPower(0);
-
-            sleep(200);
-
-            holder.setPower(-1);
-            sleep(500);
-            trap.setPower(0);
-
-            sleep(1000);
-
-            holder.setPower(-0.3);
-            trap.setPower(1);
-
-            sleep(700);
-
-            motor_slider.setTargetPosition(0);
-            motor_slider.setPower(1);
-            while(motor_slider.isBusy());
-            motor_slider.setPower(0);
-
-            sleep(200);
+        if (tip_autonomie == 2) {
+            path.add(drive.trajectoryBuilder(path.get(1).end())
+                    .lineTo(new Vector2d(14.6, 3.8),
+                            SampleMecanumDrive.getVelocityConstraint(15, 2, 10),
+                            SampleMecanumDrive.getAccelerationConstraint(30))
+                    .build());
+            drive.followTrajectory(path.get(2));
+            stick.setPower(0.9);
+            sleep(750);
         }
 
-        sleep(300);
-
-        last_x = path.get(1).end().getX() - 10;
-        last_y = path.get(1).end().getY();
-
-
-
-        path.add(drive.trajectoryBuilder(path.get(1).end())
-        .lineToLinearHeading(new Pose2d(last_x - 4.5, last_y + 47.5, Math.abs(405)),
-                SampleMecanumDrive.getVelocityConstraint(40, 4, 10),
-                SampleMecanumDrive.getAccelerationConstraint(40))
-        .build());
-
-        drive.followTrajectory(path.get(2));
-        motor_carusel.setPower(-0.5);
-        sleep(4500);
-        motor_carusel.setPower(0);
+        if (tip_autonomie == 3 || tip_autonomie == 0) {
+            path.add(drive.trajectoryBuilder(path.get(1).end())
+                    .lineTo(new Vector2d(14.6, -4.9),
+                            SampleMecanumDrive.getVelocityConstraint(15, 2, 10),
+                            SampleMecanumDrive.getAccelerationConstraint(30))
+                    .build());
+            drive.followTrajectory(path.get(2));
+            stick.setPower(0.9);
+            sleep(750);
+        }
 
         path.add(drive.trajectoryBuilder(path.get(2).end())
-        .back(12)
+                .lineTo(new Vector2d(14.5, 22))
         .build());
 
         drive.followTrajectory(path.get(3));
 
+        if (tip_autonomie == 1) {
+            motor_slider.setTargetPosition(784);
+            motor_slider.setPower(1);
+            while(motor_slider.isBusy());
+            motor_slider.setPower(0);
+
+            sleep(200);
+
+            holder.setPower(-1);
+            sleep(500);
+            trap.setPower(0);
+
+            sleep(1000);
+
+            holder.setPower(-0.3);
+            trap.setPower(1);
+
+            sleep(700);
+
+            motor_slider.setTargetPosition(0);
+            motor_slider.setPower(1);
+            while(motor_slider.isBusy());
+            motor_slider.setPower(0);
+
+            sleep(200);
+
+
+        }
+
+        if (tip_autonomie == 2) {
+            motor_slider.setTargetPosition(1273);
+            motor_slider.setPower(1);
+            while(motor_slider.isBusy());
+            motor_slider.setPower(0);
+
+            sleep(200);
+
+            holder.setPower(-1);
+            sleep(500);
+            trap.setPower(0);
+
+            sleep(1000);
+
+            holder.setPower(-0.3);
+            trap.setPower(1);
+
+            sleep(700);
+
+            motor_slider.setTargetPosition(0);
+            motor_slider.setPower(1);
+            while(motor_slider.isBusy());
+            motor_slider.setPower(0);
+
+            sleep(200);
+
+
+        }
+
+        if (tip_autonomie == 3 || tip_autonomie == 0) {
+            motor_slider.setTargetPosition(2100);
+            motor_slider.setPower(1);
+            while(motor_slider.isBusy());
+            motor_slider.setPower(0);
+
+            sleep(200);
+
+            holder.setPower(-1);
+            sleep(500);
+            trap.setPower(0);
+
+            sleep(1000);
+
+            holder.setPower(-0.3);
+            trap.setPower(1);
+
+            sleep(700);
+
+            motor_slider.setTargetPosition(0);
+            motor_slider.setPower(1);
+            while(motor_slider.isBusy());
+            motor_slider.setPower(0);
+
+            sleep(200);
+
+
+        }
+
+        last_x = path.get(1).end().getX();
+        last_y = path.get(1).end().getY();
 
         path.add(drive.trajectoryBuilder(path.get(3).end())
-        .lineToLinearHeading(new Pose2d(-12.2, 0, Math.toRadians(270)),
-                SampleMecanumDrive.getVelocityConstraint(40, 4, 10),
-                SampleMecanumDrive.getAccelerationConstraint(40))
+                .lineToLinearHeading(new Pose2d(last_x - 11.5, last_y + 73, Math.toRadians(180)),
+                        SampleMecanumDrive.getVelocityConstraint(40, 4, 10),
+                        SampleMecanumDrive.getAccelerationConstraint(40))
                 .build());
+
         drive.followTrajectory(path.get(4));
 
+        motor_carusel.setPower(-0.5);
+        sleep(3000);
+        motor_carusel.setPower(0);
+
         path.add(drive.trajectoryBuilder(path.get(4).end())
-        .forward(28)
+                .back(8)
         .build());
+
         drive.followTrajectory(path.get(5));
 
-    }
+        path.add(drive.trajectoryBuilder(path.get(5).end())
+                .lineToLinearHeading(new Pose2d(-12, 0, Math.toRadians(270)),
+                        SampleMecanumDrive.getVelocityConstraint(40, 5, 10),
+                        SampleMecanumDrive.getAccelerationConstraint(40))
+                .build());
 
+        drive.followTrajectory(path.get(6));
 
-
-
-class functions {
-    //deprecated
-    private int button_sleep = 135;
-
-    //Valoare care retine daca bratul este in reset sau nu
-    private boolean resetting_brat = false;
-
-    //Limita de jos si de sus a bratului ca inclinare
-    private final int upper_limit_brat = 1400;
-    private final int lower_limit_brat = -3500;
-
-    //Valoare care retine daca bratul este destul de extins pentru inclinare si distanta de clear
-    private boolean clear_brat = false;
-    private int dist_min_ext = 900;
-
-    public void run_slider(int dist)
-    {
-        if (dist > 2400)
-            return;
-
-        motor_slider.setTargetPosition(dist);
-
-        while (Math.abs(Math.abs(motor_slider.getCurrentPosition()) - Math.abs(dist)) >= 20 )
-            motor_slider.setPower(1);
-
-        motor_slider.setPower(0);
-        sleep(100);
+        drive.followTrajectory(drive.trajectoryBuilder(path.get(6).end())
+                .forward(32)
+        .build());
 
     }
 
-}
+
+
+
+    class functions {
+        //deprecated
+        private int button_sleep = 135;
+
+        //Valoare care retine daca bratul este in reset sau nu
+        private boolean resetting_brat = false;
+
+        //Limita de jos si de sus a bratului ca inclinare
+        private final int upper_limit_brat = 1400;
+        private final int lower_limit_brat = -3500;
+
+        //Valoare care retine daca bratul este destul de extins pentru inclinare si distanta de clear
+        private boolean clear_brat = false;
+        private int dist_min_ext = 900;
+
+        public void run_slider(int dist)
+        {
+            if (dist > 2400)
+                return;
+
+            motor_slider.setTargetPosition(dist);
+
+            while (Math.abs(Math.abs(motor_slider.getCurrentPosition()) - Math.abs(dist)) >= 20 )
+                motor_slider.setPower(1);
+
+            motor_slider.setPower(0);
+            sleep(100);
+
+        }
+
+    }
 }
