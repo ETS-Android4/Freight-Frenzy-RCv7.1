@@ -421,7 +421,7 @@ public class Driving1 extends LinearOpMode {
         double last_ct = 0;
         public void cup()
         {
-
+            //Modify
             dist_sens = dsensor1.getDistance(DistanceUnit.MM);
             if (dist_sens <= 50)
             {
