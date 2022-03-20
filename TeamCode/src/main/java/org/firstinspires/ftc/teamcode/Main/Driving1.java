@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -16,6 +17,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 //Road Runner Imports - Lucian
 
+import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.internal.camera.delegating.DelegatingCaptureSequence;
 import org.firstinspires.ftc.teamcode.Autonomie.DetectObject;
@@ -24,6 +26,7 @@ import org.firstinspires.ftc.teamcode.RoadRunner.util.BNO055IMUUtil;
 import org.firstinspires.ftc.teamcode.RoadRunner.drive.DriveConstants;
 
 import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.openftc.easyopencv.OpenCvCamera;
@@ -44,7 +47,8 @@ public class Driving1 extends LinearOpMode {
     private DcMotorEx motor_slider;
     private DcMotorEx motor_carusel;
     private DcMotorEx motor_colector;
-
+    private DcMotorEx motor_turela;
+    //private ColorSensor csensor1;
     //Valoare Pentru Inversare Orientare Driving
 
     SampleMecanumDrive mecanum_drive;
@@ -55,7 +59,11 @@ public class Driving1 extends LinearOpMode {
     private CRServo holder;
     private CRServo trap;
     private CRServo stick;
+    private Servo cup;
+    private CRServo OTcup;
+    private CRServo OTcup2;
 
+    private DistanceSensor dsensor1;
     //Variabila cu clasa de functii
     private functions fx = new functions();
 
@@ -96,6 +104,14 @@ public class Driving1 extends LinearOpMode {
         motor_slider.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motor_slider.setDirection(DcMotorSimple.Direction.FORWARD);
 
+        //Init pentru motor miscare turela
+        motor_turela = hardwareMap.get(DcMotorEx.class, "turela");
+
+        motor_turela.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motor_turela.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motor_turela.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motor_turela.setDirection(DcMotorSimple.Direction.REVERSE);
+
         //Init pentru motorul are se cupa de aruselul cu rate
         motor_carusel = hardwareMap.get(DcMotorEx.class, "carusel");
 
@@ -103,6 +119,7 @@ public class Driving1 extends LinearOpMode {
         motor_carusel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motor_carusel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         motor_carusel.setDirection(DcMotorSimple.Direction.FORWARD);
+
         //Init pentru motorul care se ocupa cu colectarea elementelor
         motor_colector = hardwareMap.get(DcMotorEx.class, "colector");
 
@@ -122,15 +139,35 @@ public class Driving1 extends LinearOpMode {
         stick = hardwareMap.crservo.get("stick");
         stick.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        cup = hardwareMap.servo.get("cup");
+        cup.setPosition(0.85);
+
+        //Batul de la cupa
+        //am un cui si un pahar
+        OTcup = hardwareMap.crservo.get("otcup");
+        OTcup.setDirection(DcMotorSimple.Direction.FORWARD);
+        // 1 - start, -0.25 max
+        OTcup.setPower(1);
+
+        //0 start + sus - jos
+        //Cupa pentru cub
+        OTcup2 = hardwareMap.crservo.get("otcup2");
+        OTcup2.setPower(0.08);
+
         holder.setPower(-0.22);
         trap.setPower(1);
         stick.setPower(0.9);
+
+
+
 
 
         //Init pentru mecanum drive RR
         mecanum_drive = new SampleMecanumDrive(hardwareMap);
         mecanum_drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         mecanum_drive.setPoseEstimate(new Pose2d(0, 0, 0));
+
+         dsensor1 = hardwareMap.get(DistanceSensor.class, "dsensor1");
 
         //Before start
         while (!opModeIsActive() && !isStopRequested())
@@ -139,7 +176,7 @@ public class Driving1 extends LinearOpMode {
             telemetry.update();
         }
 
-
+        ElapsedTime timer = new ElapsedTime();
         boolean last_it_orientation = false;
         boolean curr_it_orientation = false;
         boolean last_it_speed = false;
@@ -170,6 +207,11 @@ public class Driving1 extends LinearOpMode {
             else
                 speed_robot = 0.6;
 
+
+            telemetry.addData("Time: ", timer.seconds());
+            if (timer.seconds() > 6)
+                timer.reset();
+
             //Setare driving pe controller
             mecanum_drive.setWeightedDrivePower(
                     new Pose2d(
@@ -180,14 +222,16 @@ public class Driving1 extends LinearOpMode {
             );
             mecanum_drive.update();
 
+
             //Functiile de baza
             fx.slider(true);
             fx.carusel(true);
             fx.colector();
-            fx.holder_cr();
-            fx.trap_cr();
             fx.reset_brat();
-            fx.stick_cr();
+            //fx.stick_cr();
+            fx.cup();
+            fx.turela(true);
+            fx.outtakep1();
             telemetry.addData("Speed: ", speed_robot);
             telemetry.update();
         }
@@ -240,9 +284,33 @@ public class Driving1 extends LinearOpMode {
 
         }
 
+        private int left_limit_turela = -2500;
+        private int right_limit_turela = 2500;
+        private int poz_turela = 0;
+        private double put_turela = 1;
+        private int dif = 0;
+        public void turela(boolean logs)
+        {
+            poz_turela = motor_turela.getCurrentPosition() * -1;
+            if (gamepad1.left_stick_x >= 0.3 && poz_turela <= right_limit_turela)
+                motor_turela.setPower(0.4);
+            else if (gamepad1.left_stick_x <= -0.3 && poz_turela >= left_limit_turela)
+                motor_turela.setPower(-0.4);
+            else
+                motor_turela.setPower(0);
+
+            if (logs) {
+                telemetry.addData("turela jx: ", gamepad1.left_stick_x);
+                telemetry.addData("turela jy: ", gamepad1.left_stick_y);
+                telemetry.addData("turela poz: ", poz_turela);
+                telemetry.addData("turela pow: ", motor_turela.getPower());
+            }
+        }
+
+
         //Pozitie si limite slidere de extindere si retragere
         private int poz_slider = 0;
-        private int upper_limit_slider = 2400;
+        private int upper_limit_slider = 1600;
         private int lower_limit_slider = 2;
         private double put_slider = 1;
 
@@ -329,43 +397,127 @@ public class Driving1 extends LinearOpMode {
             if (tgl_collector && gamepad2.right_bumper)
                 motor_colector.setPower(-1);
             else if (tgl_collector && !gamepad2.right_bumper)
-                motor_colector.setPower(1);
+                motor_colector.setPower(0.55);
             else
                 motor_colector.setPower(0);
 
         }
 
-        //Functie pentru servo galetusa si distanta de la care se ridica automat servo-ul
-        private int clear_holder = 3150;
-        public void holder_cr() {
-            if (gamepad1.left_bumper )
-                holder.setPower(-1);
-            else
-                holder.setPower(-0.22);
-
-        }
-
-        public void trap_cr(){
-            if (gamepad1.right_bumper && resetting_brat == false)
-                trap.setPower(0);
-            else
-                trap.setPower(1);
-        }
-
-        public void stick_cr()
+        /*public void stick_cr()
         {
             if (gamepad1.dpad_up && stick.getPower() <= 0.9)
                 stick.setPower(stick.getPower() + 0.02);
             else if (gamepad1.dpad_down && stick.getPower() >= -0.84)
                 stick.setPower(stick.getPower() - 0.02);
-            else if (gamepad1.dpad_left)
-                stick.setPower(-0.84);
 
 
 
             telemetry.addData("Stick power:", stick.getPower());
+        }*/
+
+        double pow_cup = 0;
+        double dist_sens;
+        ElapsedTime cup_t = new ElapsedTime();
+        double last_ct = 0;
+        public void cup()
+        {
+
+            dist_sens = dsensor1.getDistance(DistanceUnit.MM);
+            if (dist_sens <= 50)
+            {
+                if (last_ct == 0) {
+                    cup_t.reset();
+                    last_ct = cup_t.milliseconds();
+                    tgl_collector = false;
+                }
+            }
+
+            if (dist_sens > 70) {
+                last_ct = 0;
+            }
+
+            if (dist_sens <= 50 && cup_t.milliseconds() > last_ct + 250)
+            {
+                last_ct = 0;
+                cup_t.reset();
+                cup.setPosition(0.4);
+                tgl_collector = true;
+            }
+
+            if (dist_sens > 70 && cup_t.milliseconds() > last_ct + 700)
+            {
+                last_ct = 0;
+                cup_t.reset();
+                cup.setPosition(0.85);
+            }
+
+            telemetry.addData("Cup Power: ", pow_cup);
+            telemetry.addData("DSensor: ", dist_sens);
+        }
+
+        boolean front_last = false;
+        boolean front_curr = false;
+        boolean cup_last = false;
+        boolean cup_curr = false;
+        boolean tgl_cup = false;
+        boolean tgl_front = false;
+        double otpow1 = 1;
+        double otpow2 = 0;
+        double l_time = 0;
+        ElapsedTime cupt = new ElapsedTime();
+        public void outtakep1()
+        {
+
+            front_last = front_curr;
+            front_curr = gamepad1.right_bumper;
+            cup_last = cup_curr;
+            cup_curr = gamepad1.left_bumper;
+
+            if (cup_curr & !cup_last)
+                tgl_cup = !tgl_cup;
+
+            if (front_curr && !front_last) {
+                tgl_front = !tgl_front;
+                cupt.reset();
+                l_time = cupt.milliseconds();
+            }
+
+            if (tgl_front) {
+                otpow1 = -0.10;
+                otpow2 = -0.65;
+            }
+
+            if (tgl_cup)
+            {
+                otpow2 = 0.5;
+            }
+
+            if (!tgl_front)
+            {
+                otpow1 = 1;
+                otpow2 = 0.08;
+            }
+
+
+
+        OTcup.setPower(otpow1);
+        if (tgl_cup && tgl_front)
+            OTcup2.setPower(otpow2);
+        else if (cupt.milliseconds() > 275 + l_time) {
+            OTcup2.setPower(otpow2);
+            cupt.reset();
+        }
+
+
+        telemetry.addData("outtake", "");
+        telemetry.addData("Timer cup: ", cupt.milliseconds());
+        telemetry.addData("Front_toggle: ", tgl_front);
+        telemetry.addData("Cup_toggle: ", tgl_cup);
+        telemetry.addData("otpow1: ", otpow1);
+        telemetry.addData("otpow2: ", otpow2);
+        telemetry.addData("otpow_acc1: ", OTcup.getPower());
+        telemetry.addData("otpow_acc2: ", OTcup2.getPower());
+        telemetry.addData("outtake", "");
         }
     }
 }
-
-

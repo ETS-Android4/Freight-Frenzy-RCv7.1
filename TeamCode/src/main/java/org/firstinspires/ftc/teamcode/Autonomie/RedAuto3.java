@@ -210,7 +210,7 @@ public class RedAuto3 extends LinearOpMode{
         drive.followTrajectory(path.get(3));
 
         if (tip_autonomie == 1) {
-            motor_slider.setTargetPosition(784);
+            motor_slider.setTargetPosition(850);
             motor_slider.setPower(1);
             while(motor_slider.isBusy());
             motor_slider.setPower(0);
@@ -239,7 +239,7 @@ public class RedAuto3 extends LinearOpMode{
         }
 
         if (tip_autonomie == 2) {
-            motor_slider.setTargetPosition(1273);
+            motor_slider.setTargetPosition(1440);
             motor_slider.setPower(1);
             while(motor_slider.isBusy());
             motor_slider.setPower(0);
@@ -268,7 +268,7 @@ public class RedAuto3 extends LinearOpMode{
         }
 
         if (tip_autonomie == 3 || tip_autonomie == 0) {
-            motor_slider.setTargetPosition(2100);
+            motor_slider.setTargetPosition(2300);
             motor_slider.setPower(1);
             while(motor_slider.isBusy());
             motor_slider.setPower(0);
@@ -300,8 +300,8 @@ public class RedAuto3 extends LinearOpMode{
         last_y = path.get(1).end().getY();
 
         path.add(drive.trajectoryBuilder(path.get(3).end())
-                .lineToLinearHeading(new Pose2d(last_x - 11.5, last_y + 73, Math.toRadians(180)),
-                        SampleMecanumDrive.getVelocityConstraint(40, 4, 10),
+                .lineToLinearHeading(new Pose2d(last_x - 8.9, last_y + 70, Math.toRadians(180)),
+                        SampleMecanumDrive.getVelocityConstraint(28, 3, 10),
                         SampleMecanumDrive.getAccelerationConstraint(40))
                 .build());
 
@@ -319,14 +319,14 @@ public class RedAuto3 extends LinearOpMode{
 
         path.add(drive.trajectoryBuilder(path.get(5).end())
                 .lineToLinearHeading(new Pose2d(-12, 0, Math.toRadians(270)),
-                        SampleMecanumDrive.getVelocityConstraint(40, 5, 10),
-                        SampleMecanumDrive.getAccelerationConstraint(40))
+                        SampleMecanumDrive.getVelocityConstraint(60, 7.5, 10),
+                        SampleMecanumDrive.getAccelerationConstraint(60))
                 .build());
 
         drive.followTrajectory(path.get(6));
 
         drive.followTrajectory(drive.trajectoryBuilder(path.get(6).end())
-                .forward(32)
+                .forward(35)
         .build());
 
     }
