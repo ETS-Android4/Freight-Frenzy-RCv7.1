@@ -24,8 +24,8 @@ import org.openftc.easyopencv.OpenCvWebcam;
 
 import java.util.ArrayList;
 
-@Autonomous(name = "OPERATION: Carousel||Blue", group = "main")
-public class BlueAuto2 extends LinearOpMode{
+@Autonomous(name = "OPERATION: Warehouse||Blue", group = "main")
+public class BlueAuto3 extends LinearOpMode{
 
     //Motoare Brat, Slidere, Carusel, Colector
     private DcMotorEx motor_brat;
@@ -153,6 +153,7 @@ public class BlueAuto2 extends LinearOpMode{
         waitForStart();
         double last_x;
         double last_y;
+        int count = 1;
         ElapsedTime timer_autonomie = new ElapsedTime();
         tip_autonomie = pipe_line.gen_tip_autonomie();
         if (isStopRequested()) return;
@@ -164,127 +165,186 @@ public class BlueAuto2 extends LinearOpMode{
         telemetry.addData("Autonomie: ", tip_autonomie);
         telemetry.update();
 
-
         stick.setPower(0);
-        cup.setPosition(0.3);
-        OTcup2.setPower(0.65);
-        drive.followTrajectory(drive.trajectoryBuilder(new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), 0))
-                .strafeRight(6,
-                        SampleMecanumDrive.getVelocityConstraint(30, 0.5, 10.36),
-                        SampleMecanumDrive.getAccelerationConstraint(30))
-                .build());
+        while (true) {
+            path.clear();
+            cup.setPosition(0.3);
 
-        drive.turn(Math.toRadians(132));
-        drive.followTrajectory(drive.trajectoryBuilder(new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), drive.getPoseEstimate().getHeading()))
-                .lineTo(new Vector2d(drive.getPoseEstimate().getX() - 28.75, drive.getPoseEstimate().getY() - 0.3),
-                        SampleMecanumDrive.getVelocityConstraint(30, 0.5, 10.36),
-                        SampleMecanumDrive.getAccelerationConstraint(30))
-                .build());
-        motor_carusel.setPower(-1);
-        sleep(4000);
-        motor_carusel.setPower(0);
+            OTcup2.setPower(0.65);
+            drive.followTrajectory(drive.trajectoryBuilder(new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), 0))
+                    .strafeRight(12,
+                            SampleMecanumDrive.getVelocityConstraint(70, 0.5, 10.36),
+                            SampleMecanumDrive.getAccelerationConstraint(70))
+                    .build());
 
-        drive.followTrajectory(drive.trajectoryBuilder(new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), drive.getPoseEstimate().getHeading()))
-                .lineTo(new Vector2d(drive.getPoseEstimate().getX() + 1.5, drive.getPoseEstimate().getY() - 38),
-                        SampleMecanumDrive.getVelocityConstraint(20, 0.5, 10.36),
-                        SampleMecanumDrive.getAccelerationConstraint(20))
-                .build());
-        if (tip_autonomie == 3 || tip_autonomie == 0) {
-            motor_slider.setTargetPosition(1650);
+            int goto_poz_slider;
+            goto_poz_slider = 1100;
+            double motor_speed;
+            motor_speed = 1;
+            if (tip_autonomie == 1 && !start)
+            {
+                goto_poz_slider = 450;
+                motor_speed = 0.7;
+            }
+
+            else if (tip_autonomie == 2 && !start)
+            {
+                goto_poz_slider = 850;
+                motor_speed = 0.7;
+            }
+
+            motor_slider.setTargetPosition(goto_poz_slider);
             motor_slider.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             while (motor_slider.getCurrentPosition() < motor_slider.getTargetPosition() - 10)
-                motor_slider.setPower(1);
+                motor_slider.setPower(motor_speed);
             motor_slider.setPower(0);
 
             ElapsedTime servo_timer = new ElapsedTime();
-            OTcup.setPower(0.2);
-            OTcup2.setPower(-0.65);
-            servo_timer.reset();
-            while (servo_timer.milliseconds() < 800) {
+            if (start || tip_autonomie != 1) {
+                OTcup.setPower(0.2);
+                OTcup2.setPower(-0.65);
             }
-            OTcup2.setPower(0.80);
+            if (!start && tip_autonomie == 1)
+            {
+                OTcup.setPower(-0.6);
+                OTcup2.setPower(-0.95);
+            }
 
             servo_timer.reset();
-            while (servo_timer.milliseconds() < 800) {
+            int servo_time;
+            servo_time = 800;
+
+            if (start)
+                servo_time = 950;
+
+            while (servo_timer.milliseconds() < servo_time) {
+            }
+            if (start || tip_autonomie != 1)
+                OTcup2.setPower(0.80);
+            if (!start && tip_autonomie == 1)
+                OTcup2.setPower(-0.1);
+
+            servo_timer.reset();
+            while (servo_timer.milliseconds() < servo_time) {
             }
 
             OTcup2.setPower(0.65);
             OTcup.setPower(1);
 
             motor_slider.setTargetPosition(0);
-            while (motor_slider.getCurrentPosition() > motor_slider.getTargetPosition() + 10)
-                motor_slider.setPower(1);
-            motor_slider.setPower(0);
-
-        }
-
-        if (tip_autonomie == 2) {
-            motor_slider.setTargetPosition(1275);
             motor_slider.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            while (motor_slider.getCurrentPosition() < motor_slider.getTargetPosition() - 10)
-                motor_slider.setPower(0.6);
-            motor_slider.setPower(0);
-
-            ElapsedTime servo_timer = new ElapsedTime();
-            OTcup.setPower(-0.6);
-            OTcup2.setPower(-0.95);
-            servo_timer.reset();
-            while (servo_timer.milliseconds() < 900) {
-            }
-            OTcup2.setPower(-0.1);
-
-            servo_timer.reset();
-            while (servo_timer.milliseconds() < 900) {
-            }
-
-            OTcup2.setPower(0.65);
-            OTcup.setPower(1);
-
-            motor_slider.setTargetPosition(0);
             while (motor_slider.getCurrentPosition() > motor_slider.getTargetPosition() + 10)
                 motor_slider.setPower(1);
             motor_slider.setPower(0);
 
-        }
+            drive.followTrajectory(drive.trajectoryBuilder(new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), 0))
+                    .strafeLeft(13.25,
+                            SampleMecanumDrive.getVelocityConstraint(70, 0.5, 10.36),
+                            SampleMecanumDrive.getAccelerationConstraint(70))
+                    .build());
 
-        if (tip_autonomie == 1) {
-            motor_slider.setTargetPosition(1080);
-            motor_slider.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            while (motor_slider.getCurrentPosition() < motor_slider.getTargetPosition() - 10)
-                motor_slider.setPower(0.6);
-            motor_slider.setPower(0);
 
-            ElapsedTime servo_timer = new ElapsedTime();
-            OTcup.setPower(-0.6);
-            OTcup2.setPower(-0.95);
-            servo_timer.reset();
-            while (servo_timer.milliseconds() < 900) {
+            cup.setPosition(0.8);
+            int speed_final;
+            speed_final = 70;
+            if (timer_autonomie.milliseconds() > 27000)
+                speed_final = 37;
+            path.add(drive.trajectoryBuilder(new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), 0))
+                    .lineTo(new Vector2d(30 + x, y - 4),
+                            SampleMecanumDrive.getVelocityConstraint(speed_final, 0.5, 10.36),
+                            SampleMecanumDrive.getAccelerationConstraint(speed_final))
+                    .build());
+            drive.followTrajectory(path.get(0));
+
+            path.add(drive.trajectoryBuilder(new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), 0))
+                    .lineTo(new Vector2d(
+                                    drive.getPoseEstimate().getX() + 50,
+                                    drive.getPoseEstimate().getY() - 30),
+                            SampleMecanumDrive.getVelocityConstraint(7, 1, 10.36),
+                            SampleMecanumDrive.getAccelerationConstraint(7))
+                    .build());
+            drive.followTrajectoryAsync(path.get(1));
+
+            motor_colector.setPower(1);
+            OTcup2.setPower(0);
+            double distance = dsensor1.getDistance(DistanceUnit.MM);
+            double l_time = 0;
+            ElapsedTime timer = new ElapsedTime();
+            ElapsedTime blocked_timer = new ElapsedTime();
+            blocked_timer.reset();
+            while (distance > 50 && timer.milliseconds() < l_time + 75) {
+                drive.update();
+                distance = dsensor1.getDistance(DistanceUnit.MM);
+
+                if (l_time == 0 && distance < 50) {
+                    timer.reset();
+                    l_time = timer.milliseconds();
+                    motor_colector.setPower(0);
+                }
+
+                if (distance > 50) {
+                    l_time = 0;
+                    timer.reset();
+                    motor_colector.setPower(1);
+                }
+
+                if (blocked_timer.milliseconds() > 3000)
+                {
+                    drive.followTrajectory(drive.trajectoryBuilder(new Pose2d(drive.getPoseEstimate().getX() - 1, drive.getPoseEstimate().getY(), 0))
+                            .strafeLeft(4,
+                                    SampleMecanumDrive.getVelocityConstraint(70, 0.5, 10.36),
+                                    SampleMecanumDrive.getAccelerationConstraint(70))
+                            .build());
+                    drive.followTrajectoryAsync(drive.trajectoryBuilder(new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), 0))
+                            .lineTo(new Vector2d(
+                                            drive.getPoseEstimate().getX() + 50,
+                                            drive.getPoseEstimate().getY() - 30),
+                                    SampleMecanumDrive.getVelocityConstraint(7, 1, 10.36),
+                                    SampleMecanumDrive.getAccelerationConstraint(7))
+                            .build());
+                    timer.reset();
+                    blocked_timer.reset();
+                }
+
             }
-            OTcup2.setPower(-0.1);
-
-            servo_timer.reset();
-            while (servo_timer.milliseconds() < 900) {
+            y += 5;
+            if (count <= 2)
+                x -= 4.5;
+            count++;
+            if (timer_autonomie.milliseconds() > 21000)
+            {
+                drive.breakFollowing();
+                break;
             }
 
-            OTcup2.setPower(0.65);
-            OTcup.setPower(1);
+            drive.breakFollowing();
+            cup.setPosition(0.3);
+            OTcup2.setPower(0);
+            servo_timer.reset();
+            while (servo_timer.milliseconds() < 300)
+            {
 
-            motor_slider.setTargetPosition(0);
-            while (motor_slider.getCurrentPosition() > motor_slider.getTargetPosition() + 10)
-                motor_slider.setPower(1);
-            motor_slider.setPower(0);
+            }
+            motor_colector.setPower(1);
 
+            path.add(drive.trajectoryBuilder(new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), 0))
+                    .lineTo(new Vector2d(20 + x - 6, y + 1.5),
+                            SampleMecanumDrive.getVelocityConstraint(70, 0.5, 10.36),
+                            SampleMecanumDrive.getAccelerationConstraint(70))
+                    .build());
+
+            drive.followTrajectory(path.get(2));
+            path.add(drive.trajectoryBuilder(new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), 0))
+                    .lineTo(new Vector2d(0 + x*2, y - 3),
+                            SampleMecanumDrive.getVelocityConstraint(70, 0.5, 10.36),
+                            SampleMecanumDrive.getAccelerationConstraint(70))
+                    .build());
+            drive.followTrajectory(path.get(3));
+
+            motor_colector.setPower(0);
+            if (start == false)
+                start = true;
         }
-
-        stick.setPower(0.2);
-        drive.followTrajectory(drive.trajectoryBuilder(new Pose2d(drive.getPoseEstimate().getX(), drive.getPoseEstimate().getY(), drive.getPoseEstimate().getHeading()))
-                .lineTo(new Vector2d(drive.getPoseEstimate().getX() - 2.5, drive.getPoseEstimate().getY() + 18.2),
-                        SampleMecanumDrive.getVelocityConstraint(20, 0.5, 10.36),
-                        SampleMecanumDrive.getAccelerationConstraint(20))
-                .build());
-
-        cup.setPosition(0.1);
-        sleep(1000);
     }
 
 

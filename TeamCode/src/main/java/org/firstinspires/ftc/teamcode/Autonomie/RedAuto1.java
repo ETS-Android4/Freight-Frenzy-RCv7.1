@@ -1,45 +1,29 @@
 package org.firstinspires.ftc.teamcode.Autonomie;
 
 import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.roadrunner.drive.MecanumDrive;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
-import com.qualcomm.hardware.lynx.commands.core.LynxReadVersionStringResponse;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.Servo;
 
 
 //Road Runner Imports - Lucian
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.internal.camera.delegating.DelegatingCaptureSequence;
-import org.firstinspires.ftc.teamcode.Autonomie.DetectObject;
-import org.firstinspires.ftc.teamcode.Main.Driving1;
 import org.firstinspires.ftc.teamcode.RoadRunner.drive.SampleMecanumDrive;
-import org.firstinspires.ftc.teamcode.RoadRunner.util.BNO055IMUUtil;
 import org.firstinspires.ftc.teamcode.RoadRunner.drive.DriveConstants;
 
-import com.qualcomm.robotcore.hardware.DistanceSensor;
-
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
-import org.openftc.easyopencv.OpenCvInternalCamera2;
-import org.openftc.easyopencv.OpenCvPipeline;
 import org.openftc.easyopencv.OpenCvWebcam;
 
-import java.nio.file.attribute.FileOwnerAttributeView;
 import java.util.ArrayList;
-import java.util.function.Function;
 
 @Autonomous(name = "Red Side", group = "main")
 public class RedAuto1 extends LinearOpMode{
@@ -62,7 +46,7 @@ public class RedAuto1 extends LinearOpMode{
     private SampleMecanumDrive drive;
 
     OpenCvWebcam webcam;
-    DetectObject pipe_line = new DetectObject();
+    DetectObjectBlue pipe_line = new DetectObjectBlue();
 
     @Override
     public void runOpMode() throws InterruptedException
@@ -148,9 +132,9 @@ public class RedAuto1 extends LinearOpMode{
 
         if (isStopRequested()) return;
 
+        //Obiecte Road-Runner
         drive = new SampleMecanumDrive(hardwareMap);
         ArrayList<Trajectory> path = new ArrayList<>();
-
         DriveConstants driveConstants = new DriveConstants();
 
 
@@ -286,7 +270,6 @@ public class RedAuto1 extends LinearOpMode{
         .build());
 
         drive.followTrajectory(path.get(3));
-
 
         path.add(drive.trajectoryBuilder(path.get(3).end())
         .lineToLinearHeading(new Pose2d(-12.2, 0, Math.toRadians(270)),

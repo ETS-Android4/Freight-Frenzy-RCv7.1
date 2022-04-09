@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.Autonomie;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
@@ -9,24 +8,24 @@ import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 import org.openftc.easyopencv.OpenCvPipeline;
 
-public class DetectObject extends OpenCvPipeline {
+public class DetectObjectRed extends OpenCvPipeline {
     Mat mat = new Mat();
     private int tip_autonomie;
-
+    static int offset = 60;
     static final Rect zona_stanga = new Rect(
             new Point(00, 135),
-            new Point(90, 200));
+            new Point(60, 200));
 
     static final Rect zona_mijloc = new Rect(
-            new Point(120, 135),
-            new Point(170, 200));
+            new Point( 60 + offset, 135),
+            new Point(120 + offset, 200));
 
     static final Rect zona_dreapta = new Rect(
-            new Point(200, 135),
-            new Point(310, 200));
+            new Point(120 + offset * 2, 135),
+            new Point(180 + offset * 2, 200));
 
 
-    static double procentObiectPeZona = 0.0020;
+    static double procentObiectPeZona = 0.1;
 
     @Override
     public Mat processFrame(Mat input) {
@@ -35,8 +34,8 @@ public class DetectObject extends OpenCvPipeline {
         //43, 62, 100 - brightness 100
         //35, 100, 69 - brightness 0
         //Take half of HSV online H value, and then make a range +- 10/5
-        Scalar lowHSV = new Scalar(50.5, 45, 45);
-        Scalar highHSV = new Scalar(80.5, 255, 255);
+        Scalar lowHSV = new Scalar(36, 45, 45);
+        Scalar highHSV = new Scalar(56, 255, 255);
 
         Core.inRange(mat, lowHSV, highHSV, mat);
 

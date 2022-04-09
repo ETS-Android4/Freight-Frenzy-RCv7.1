@@ -3,12 +3,9 @@ package org.firstinspires.ftc.teamcode.Main;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
-import com.qualcomm.hardware.lynx.commands.core.LynxReadVersionStringResponse;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
-import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -17,13 +14,9 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 //Road Runner Imports - Lucian
 
-import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.internal.camera.delegating.DelegatingCaptureSequence;
-import org.firstinspires.ftc.teamcode.Autonomie.DetectObject;
+import org.firstinspires.ftc.teamcode.Autonomie.DetectObjectBlue;
 import org.firstinspires.ftc.teamcode.RoadRunner.drive.SampleMecanumDrive;
-import org.firstinspires.ftc.teamcode.RoadRunner.util.BNO055IMUUtil;
-import org.firstinspires.ftc.teamcode.RoadRunner.drive.DriveConstants;
 
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -32,12 +25,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
-import org.openftc.easyopencv.OpenCvInternalCamera2;
-import org.openftc.easyopencv.OpenCvPipeline;
 import org.openftc.easyopencv.OpenCvWebcam;
-
-import java.nio.file.attribute.FileOwnerAttributeView;
-import java.util.function.Function;
 
 @TeleOp(name = "Main_Driving", group = "main")
 
@@ -57,6 +45,7 @@ public class Driving1 extends LinearOpMode {
     private FtcDashboard dashboard = FtcDashboard.getInstance();
 
     private CRServo holder;
+    private CRServo barrier_left;
     private CRServo trap;
     private CRServo stick;
     private Servo cup;
@@ -67,8 +56,10 @@ public class Driving1 extends LinearOpMode {
     //Variabila cu clasa de functii
     private functions fx = new functions();
 
+    //Obiectul camerei
     OpenCvWebcam webcam;
-    DetectObject pipe_line = new DetectObject();
+    //Modul de detectare
+    DetectObjectBlue pipe_line = new DetectObjectBlue();
     @Override
     public void runOpMode() throws InterruptedException
     {
@@ -118,7 +109,7 @@ public class Driving1 extends LinearOpMode {
         motor_carusel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor_carusel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motor_carusel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        motor_carusel.setDirection(DcMotorSimple.Direction.FORWARD);
+        motor_carusel.setDirection(DcMotorSimple.Direction.REVERSE);
 
         //Init pentru motorul care se ocupa cu colectarea elementelor
         motor_colector = hardwareMap.get(DcMotorEx.class, "colector");
@@ -140,7 +131,7 @@ public class Driving1 extends LinearOpMode {
         stick.setDirection(DcMotorSimple.Direction.REVERSE);
 
         cup = hardwareMap.servo.get("cup");
-        cup.setPosition(0.85);
+        cup.setPosition(0.33);
 
         //Batul de la cupa
         //am un cui si un pahar
@@ -149,17 +140,19 @@ public class Driving1 extends LinearOpMode {
         // 1 - start, -0.25 max
         OTcup.setPower(1);
 
+        barrier_left = hardwareMap.crservo.get("barrier");
+        barrier_left.setDirection(DcMotorSimple.Direction.FORWARD);
+
+        barrier_left.setPower(0);
+
         //0 start + sus - jos
         //Cupa pentru cub
         OTcup2 = hardwareMap.crservo.get("otcup2");
-        OTcup2.setPower(0.08);
+        OTcup2.setPower(0.65);
 
         holder.setPower(-0.22);
         trap.setPower(1);
-        stick.setPower(0.9);
-
-
-
+        stick.setPower(1);
 
 
         //Init pentru mecanum drive RR
@@ -207,6 +200,8 @@ public class Driving1 extends LinearOpMode {
             else
                 speed_robot = 0.6;
 
+            if (fx.poz_slider > 800)
+                speed_robot = 0.3;
 
             telemetry.addData("Time: ", timer.seconds());
             if (timer.seconds() > 6)
@@ -215,9 +210,9 @@ public class Driving1 extends LinearOpMode {
             //Setare driving pe controller
             mecanum_drive.setWeightedDrivePower(
                     new Pose2d(
-                            -gamepad2.left_stick_y * orientation_drive * speed_robot,
-                            -gamepad2.left_stick_x * orientation_drive * speed_robot,
-                            -gamepad2.right_stick_x * speed_robot
+                            -gamepad2.left_stick_y * orientation_drive * 0.6,
+                            -gamepad2.left_stick_x * orientation_drive * 0.6,
+                            -gamepad2.right_stick_x * 0.4
                     )
             );
             mecanum_drive.update();
@@ -232,6 +227,8 @@ public class Driving1 extends LinearOpMode {
             fx.cup();
             fx.turela(true);
             fx.outtakep1();
+            fx.capping();
+            fx.down_barrier_left();
             telemetry.addData("Speed: ", speed_robot);
             telemetry.update();
         }
@@ -239,8 +236,9 @@ public class Driving1 extends LinearOpMode {
     }
 
 
-    //Clasa functii de baza robot
+    //Clasa care gestioneaza functiile pentru robot
     class functions {
+
         //deprecated
         private int button_sleep = 135;
 
@@ -258,25 +256,38 @@ public class Driving1 extends LinearOpMode {
         private double put_brat = 0.8;
 
 
-        //Functia de resetare brat si slider
+        //Variabile pentru functia de resetare brat
         boolean last_it_reset = false;
         boolean curr_it_reset = false;
+        ElapsedTime reset_t = new ElapsedTime();
+        double last_reset_t = 0;
+        //Functia pentru resetarea bratului
         public void reset_brat() {
             last_it_reset = curr_it_reset;
             curr_it_reset = gamepad1.b;
 
             if (curr_it_reset && !last_it_reset) {
                 resetting_brat = true;
+                tgl_front = false;
                 motor_slider.setTargetPosition(0);
 
                 motor_slider.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 if (Math.abs(motor_slider.getCurrentPosition()) >= 2)
                     motor_slider.setPower(1);
+
+                if (last_reset_t == 0)
+                {
+                    reset_t.reset();
+                    last_reset_t = reset_t.milliseconds();
+                }
             }
 
-            if (Math.abs(motor_slider.getCurrentPosition()) < 8)
+            if (Math.abs(motor_slider.getCurrentPosition()) < 2 || reset_t.milliseconds() > last_reset_t + 2000) {
                 resetting_brat = false;
+                reset_t.reset();
+                last_reset_t = 0;
+            }
 
             if (resetting_brat == false) {
                 motor_slider.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -284,18 +295,32 @@ public class Driving1 extends LinearOpMode {
 
         }
 
-        private int left_limit_turela = -2500;
-        private int right_limit_turela = 2500;
+        //Limitele motorului de la turela
+        private int left_limit_turela = -5500;
+        private int right_limit_turela = 5500;
         private int poz_turela = 0;
         private double put_turela = 1;
         private int dif = 0;
+        boolean limit_set = false;
+        //Functia pentru turela
         public void turela(boolean logs)
         {
             poz_turela = motor_turela.getCurrentPosition() * -1;
-            if (gamepad1.left_stick_x >= 0.3 && poz_turela <= right_limit_turela)
+            if (gamepad1.left_stick_x >= 0.3 && poz_turela <= right_limit_turela) {
+                if (!limit_set)
+                {
+                    limit_set = true;
+                    left_limit_turela = 0;
+                }
                 motor_turela.setPower(0.4);
-            else if (gamepad1.left_stick_x <= -0.3 && poz_turela >= left_limit_turela)
+            }
+            else if (gamepad1.left_stick_x <= -0.3 && poz_turela >= left_limit_turela) {
+                if (!limit_set) {
+                    limit_set = true;
+                    right_limit_turela = 0;
+                }
                 motor_turela.setPower(-0.4);
+            }
             else
                 motor_turela.setPower(0);
 
@@ -317,6 +342,14 @@ public class Driving1 extends LinearOpMode {
         //Functia pentru motoarele de la slider extindere/retragere
         public void slider(boolean logs) {
             poz_slider = motor_slider.getCurrentPosition();
+
+            if (poz_slider >= 700)
+                put_slider = 0.7;
+            if (poz_slider >= 1000)
+                put_slider = 0.5;
+            if (poz_slider < 900)
+                put_slider = 1;
+
 
             if (resetting_brat == false) {
                 if (gamepad1.right_trigger >= 0.3 && poz_slider <= upper_limit_slider) {
@@ -347,9 +380,9 @@ public class Driving1 extends LinearOpMode {
         public void carusel(boolean logs) {
 
             carusel_last_it_red = carusel_curr_it_red;
-            carusel_curr_it_red = gamepad1.y;
+            carusel_curr_it_red = gamepad1.square;
             carusel_last_it_blue = carusel_curr_it_blue;
-            carusel_curr_it_blue = gamepad1.x;
+            carusel_curr_it_blue = gamepad1.cross;
 
             if (carusel_curr_it_red && !carusel_last_it_red)
                 carusel_tgl_red = !carusel_tgl_red;
@@ -359,14 +392,14 @@ public class Driving1 extends LinearOpMode {
 
             if (carusel_tgl_red && !carusel_tgl_blue)
             {
-                if (carusel_power > -0.60)
-                    carusel_power -= 0.04;
+                if (carusel_power > -1)
+                    carusel_power -= 0.075;
 
             }
             else if (carusel_tgl_blue && !carusel_tgl_red)
             {
-                if (carusel_power < 0.60)
-                    carusel_power += 0.04;
+                if (carusel_power < 1)
+                    carusel_power += 0.075;
             }
             else
                 carusel_power = 0;
@@ -388,16 +421,49 @@ public class Driving1 extends LinearOpMode {
         boolean last_it_collector = false;
         boolean curr_it_collector = false;
         boolean tgl_collector = false;
+        boolean up = true;
+        ElapsedTime timer_servo = new ElapsedTime();
+        double l_time_servo = 0;
         public void colector() {
             last_it_collector = curr_it_collector;
             curr_it_collector = gamepad2.y;
-            if (curr_it_collector && !last_it_collector)
+
+            if (curr_it_collector && !last_it_collector) {
                 tgl_collector = !tgl_collector;
+                if (tgl_collector)
+                    up = false;
+                else if (!tgl_collector)
+                    up = true;
+            }
+
+            if (up)
+            {
+                if (poz_slider < 1000 && !tgl_front)
+                cup.setPosition(0.33);
+                else if (poz_slider >= 1000 || tgl_front)
+                    cup.setPosition(0.1);
+                if (l_time_servo == 0)
+                {
+                    timer_servo.reset();
+                    l_time_servo = timer_servo.milliseconds();
+                }
+            }
+
+            if (!up) {
+                cup.setPosition(0.84);
+                l_time_servo = 0;
+            }
+
+
+            if (poz_slider >= 40) {
+                tgl_collector = false;
+                up = true;
+            }
 
             if (tgl_collector && gamepad2.right_bumper)
-                motor_colector.setPower(-1);
-            else if (tgl_collector && !gamepad2.right_bumper)
-                motor_colector.setPower(0.55);
+                motor_colector.setPower(-0.9);
+            else if (tgl_collector && !gamepad2.right_bumper && timer_servo.milliseconds() > l_time_servo + 300)
+                motor_colector.setPower(0.9);
             else
                 motor_colector.setPower(0);
 
@@ -419,36 +485,57 @@ public class Driving1 extends LinearOpMode {
         double dist_sens;
         ElapsedTime cup_t = new ElapsedTime();
         double last_ct = 0;
+        double last_ct_tgl = 0;
+        boolean tgl_ot = false;
         public void cup()
         {
-            //Modify
+            //Distanta in mm a senzorului
             dist_sens = dsensor1.getDistance(DistanceUnit.MM);
-            if (dist_sens <= 50)
+            if (dist_sens < 60 && !tgl_ot)
             {
-                if (last_ct == 0) {
+                if (last_ct == 0)
+                {
                     cup_t.reset();
                     last_ct = cup_t.milliseconds();
-                    tgl_collector = false;
                 }
             }
 
-            if (dist_sens > 70) {
+            if (dist_sens < 60 && cup_t.milliseconds() > last_ct + 100 && !tgl_ot)
+            {
+                tgl_collector = false;
+                up = true;
+                tgl_ot = true;
+            }
+
+
+
+            else if (dist_sens > 60 && last_ct != 0 && !tgl_ot)
+            {
                 last_ct = 0;
             }
 
-            if (dist_sens <= 50 && cup_t.milliseconds() > last_ct + 250)
+            if (tgl_ot)
             {
-                last_ct = 0;
-                cup_t.reset();
-                cup.setPosition(0.4);
+                up = true;
                 tgl_collector = true;
+                tgl_special_cup = false;
+                if (dist_sens < 60)
+                {
+                    cup_t.reset();
+                    last_ct_tgl = cup_t.milliseconds();
+                }
             }
 
-            if (dist_sens > 70 && cup_t.milliseconds() > last_ct + 700)
+            if (tgl_ot && cup_t.milliseconds() > last_ct_tgl + 1000 && dist_sens > 80)
             {
                 last_ct = 0;
+                last_ct_tgl = 0;
+                tgl_collector = false;
+                tgl_ot = false;
+                up = true;
                 cup_t.reset();
-                cup.setPosition(0.85);
+                tgl_special_cup = true;
+
             }
 
             telemetry.addData("Cup Power: ", pow_cup);
@@ -459,21 +546,30 @@ public class Driving1 extends LinearOpMode {
         boolean front_curr = false;
         boolean cup_last = false;
         boolean cup_curr = false;
+        boolean exjos_curr = false;
+        boolean exjos_last = false;
         boolean tgl_cup = false;
         boolean tgl_front = false;
+        boolean tgl_special_cup = true;
+        boolean tgl_exjos = false;
         double otpow1 = 1;
         double otpow2 = 0;
         double l_time = 0;
+        boolean once = false;
         ElapsedTime cupt = new ElapsedTime();
         public void outtakep1()
         {
-
+            exjos_last = exjos_curr;
+            exjos_curr = gamepad1.triangle;
             front_last = front_curr;
             front_curr = gamepad1.right_bumper;
             cup_last = cup_curr;
             cup_curr = gamepad1.left_bumper;
 
-            if (cup_curr & !cup_last)
+            if (exjos_curr && !exjos_last)
+                tgl_exjos = !tgl_exjos;
+
+            if (cup_curr && !cup_last)
                 tgl_cup = !tgl_cup;
 
             if (front_curr && !front_last) {
@@ -482,31 +578,61 @@ public class Driving1 extends LinearOpMode {
                 l_time = cupt.milliseconds();
             }
 
+            if (poz_slider < 100)
+                once = false;
+
+            if (poz_slider >= 100 && !once)
+            {
+                tgl_front = true;
+                once = true;
+                cupt.reset();
+                l_time = cupt.milliseconds();
+            }
+
+
             if (tgl_front) {
-                otpow1 = -0.10;
+                otpow1 = 0.20;
                 otpow2 = -0.65;
             }
 
-            if (tgl_cup)
+            if (tgl_front && tgl_exjos)
             {
-                otpow2 = 0.5;
+                otpow1 = -0.6;
+                otpow2 = -0.95;
             }
 
             if (!tgl_front)
             {
+                tgl_cup = false;
+                tgl_exjos = false;
                 otpow1 = 1;
-                otpow2 = 0.08;
+                otpow2 = 0;
+            }
+
+            if (tgl_cup)
+            {
+                otpow2 = 0.80;
+            }
+
+            if (tgl_cup && tgl_exjos)
+                otpow2 = -0.1;
+
+            if (!tgl_front && tgl_special_cup)
+            {
+                otpow2 = 0.65;
             }
 
 
 
         OTcup.setPower(otpow1);
-        if (tgl_cup && tgl_front)
-            OTcup2.setPower(otpow2);
-        else if (cupt.milliseconds() > 275 + l_time) {
-            OTcup2.setPower(otpow2);
-            cupt.reset();
-        }
+            if (cupt.milliseconds() > l_time + 200 && tgl_front)
+            {
+                OTcup2.setPower(otpow2);
+                cupt.reset();
+            }
+            if (!tgl_front)
+                OTcup2.setPower(otpow2);
+
 
 
         telemetry.addData("outtake", "");
@@ -518,6 +644,37 @@ public class Driving1 extends LinearOpMode {
         telemetry.addData("otpow_acc1: ", OTcup.getPower());
         telemetry.addData("otpow_acc2: ", OTcup2.getPower());
         telemetry.addData("outtake", "");
+        }
+
+        boolean curr_stick = false;
+        boolean last_stick = false;
+        boolean tgl_stick = false;
+        double power_stick = 0.2;
+        void capping()
+        {
+            if (gamepad1.dpad_down && power_stick  > -0.9)
+                power_stick -= 0.04;
+            else if (gamepad1.dpad_up)
+                power_stick += 0.04;
+
+            stick.setPower(power_stick);
+        }
+
+        boolean curr_barrier_left = false;
+        boolean last_barrier_left = false;
+        boolean tgl_barrier_left = false;
+        void down_barrier_left()
+        {
+            last_barrier_left = curr_barrier_left;
+            curr_barrier_left = gamepad1.dpad_right;
+            if (curr_barrier_left && !last_barrier_left)
+                tgl_barrier_left = !tgl_barrier_left;
+
+            if (tgl_barrier_left)
+                barrier_left.setPower(1);
+            else if (!tgl_barrier_left)
+                barrier_left.setPower(0);
+
         }
     }
 }
